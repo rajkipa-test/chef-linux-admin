@@ -1,0 +1,64 @@
+#!/bin/bash
+
+
+usage() {
+  echo ""
+    echo "Options:"
+    echo "   -i      | include comma separate service"
+    echo "   -e      | exclude comma separate service"
+    echo "   list    | To list all services"
+    echo "   start   | To start all services"
+    echo "   stop    | To stop all services"
+    echo "   restart | To restart all services"
+    echo "   status  | To restart all services"
+
+    echo "   -h | usage"
+    exit 3
+}
+
+if [ $(whoami) != 'root'  ]; then
+  echo "Must be root to run $0"
+  exit 1;
+fi
+
+if [ $# -eq 0 ]; then
+  usage
+fi
+
+while getopts ":i:e:h" opt
+do
+  case $opt in
+    h|\?)
+      usage;;
+    i)
+      include=$OPTARG;;
+    e)
+      exclude=$OPTARG;;
+    *)  # Default
+        usage;;
+    esac
+done
+
+shift $((OPTIND -1))
+action=$1
+
+service=(mongod qpidd httpd pulp_workers pulp_celerybeat pulp_resource_manager)
+
+case $action in
+  "list")
+    for srv in ${service[@]}; do
+      printf "%-30s %10s\n" "$srv" "`systemctl is-enabled $srv`"
+    done;;
+  "start")
+    systemctl start ${service[@]};;
+  "stop")
+    systemctl stop ${service[@]};;
+  "restart")
+    systemctl restart ${service[@]};;
+  "status")
+    systemctl status ${service[@]};;
+  *)
+    echo "Not a valid argument"
+    usage;;
+esac
+
